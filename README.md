@@ -18,8 +18,31 @@ This repo has code to automatically pull nba data using `nbastatpy`. This will b
 - Regular season data for per-game level stats is good to go
 - Playoff Game data is good to go
 - NO per possession
+  - Per Possession not available for tracking / play type data
 - NO playoff level season stats
+
+**Just need to get playoff season stats & per possession for stats where available (no tracking or playtype)**
+
 
 >[!WARNING]
 > Need to recreate the historical database, will be good to have here anyway. Will have a 'break in case of emergency' rebuild database script
 > MUST INCLUDE TESTING
+
+## Process for Building Get Data Process
+
+- Will want an inventory file to track what has already been pulled
+  - Holds IDs:
+    - Game ID: Only pull new games
+    - Player ID: Only pull player data once a year for players not in list
+    - Season: Only update current season (replace), if new season pull all data
+      - Keep initial pull for posterity...?
+
+- Player Data 
+  - Updated once a year for current season
+  - No possession / playoff difference
+  - Tables
+   - Combine data pulled for one year (one pull)
+   - Common info pulled for each NEW player (check for previous pulls)
+- Season Data
+  - Updated once a day for current season
+
