@@ -60,7 +60,8 @@ def get_season_list(earliest_season_year: int, inventory: dict, playoffs: bool =
         if season not in inventory["SEASON"]["PER_GAME"][season_grain]
     ]
     if not seasons:
-        seasons = [f"{str(seasons)}{str(seasons + 1)[-2:]}"]
+        seasons = [f"{str(season_year)}"]
+        # seasons = [f"{str(seasons)}{str(int(seasons) + 1)[-2:]}"]
 
     return seasons
 

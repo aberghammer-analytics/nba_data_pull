@@ -147,6 +147,26 @@ def get_data_to_pull(
         },
     }
 
+    if not data_to_pull["season"]["per_game"]["regular_season"]:
+        data_to_pull["season"]["per_game"]["regular_season"] = [
+            f"{str(SeasonYear.default)}{str(SeasonYear.default + 1)[-2:]}"
+        ]
+
+    if not data_to_pull["season"]["per_game"]["playoffs"]:
+        data_to_pull["season"]["per_game"]["playoffs"] = [
+            f"{str(SeasonYear.default)}{str(SeasonYear.default + 1)[-2:]}"
+        ]
+
+    if not data_to_pull["season"]["per_possession"]["regular_season"]:
+        data_to_pull["season"]["per_possession"]["regular_season"] = [
+            f"{str(SeasonYear.default)}{str(SeasonYear.default + 1)[-2:]}"
+        ]
+
+    if not data_to_pull["season"]["per_possession"]["playoffs"]:
+        data_to_pull["season"]["per_possession"]["playoffs"] = [
+            f"{str(SeasonYear.default)}{str(SeasonYear.default + 1)[-2:]}"
+        ]
+
     logger.info("Saving Data")
     with open(output_path, "w") as json_file:
         yaml.safe_dump(data_to_pull, json_file, indent=4)

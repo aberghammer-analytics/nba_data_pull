@@ -123,9 +123,7 @@ class SeasonIngest(Season):
         super().__init__(season_year=season_year, playoffs=playoffs, permode=permode)
 
         self.season_id = self.season.upper().replace(" ", "").replace("-", "")
-        self.save_folder = (
-            Path(save_folder).joinpath("SEASON").joinpath(str(self.season_id))
-        )
+        self.save_folder = Path(save_folder).joinpath(str(self.season_id))
 
         if not Path(self.save_folder).exists():
             if verbose:
