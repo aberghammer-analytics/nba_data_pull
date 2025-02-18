@@ -87,6 +87,8 @@ def get_season_data(
         "PER_GAME"
     ).joinpath("REGULAR_SEASON")
 
+    game_ids_playoffs = data_to_pull.get("game").get("playoffs")
+
     # Get regular season per game data
     error_log["regular_season_pergame"] = {}
     for season_id in track(season_ids_regular_season_pergame):
@@ -115,6 +117,8 @@ def get_season_data(
 
     error_log["playoffs_pergame"] = {}
     for season_id in track(season_ids_playoffs_pergame):
+        if not game_ids_playoffs.get(season_id[0:4]):
+            continue
         try:
             season_ingest = SeasonIngest(
                 season_year=season_id[0:4],  # Expects season year not season id
@@ -167,6 +171,8 @@ def get_season_data(
 
     error_log["playoffs_perpossession"] = {}
     for season_id in track(season_ids_playoffs_perpossession):
+        if not game_ids_playoffs.get(season_id[0:4]):
+            continue
         try:
             season_ingest = SeasonIngest(
                 season_year=season_id[0:4],  # Expects season year not season id
