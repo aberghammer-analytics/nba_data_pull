@@ -388,9 +388,7 @@ class GameIngest(Game):
         super().__init__(game_id=game_id)
         self.game_id = game_id
 
-        self.save_folder = (
-            Path(save_folder).joinpath("GAME").joinpath(str(self.game_id))
-        )
+        self.save_folder = Path(save_folder).joinpath(str(self.game_id))
 
         if not Path(self.save_folder).exists():
             if verbose:

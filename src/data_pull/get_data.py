@@ -188,6 +188,89 @@ def get_season_data(
         yaml.dump(error_log, file)
 
 
+@app.command()
+def get_game_data(
+    data_to_pull_path: Annotated[
+        Path,
+        typer.Argument(
+            help="Path to data to pull yaml file", file_okay=True, dir_okay=False
+        ),
+    ] = Path("data/meta/data_to_pull.yaml"),
+    game_save_folder: Annotated[
+        Path,
+        typer.Argument(help="Path to save game data", file_okay=False, dir_okay=True),
+    ] = Path("data/nba/GAME/"),
+    game_error_log_path: Annotated[
+        Path,
+        typer.Argument(help="Path to save error log", file_okay=False, dir_okay=True),
+    ] = Path("data/logs/GAME/"),
+):
+    logger.info("Loading data to pull yaml file")
+    with open(data_to_pull_path, "r") as file:
+        data_to_pull = yaml.safe_load(file)
+
+    error_log = {}
+
+    game_ids_regular_season = data_to_pull.get("game").get("regular_season")
+    regular_season_path = game_save_folder.joinpath("REGULAR_SEASON")
+
+    game_ids_playoffs = data_to_pull.get("game").get("playoffs")
+    playoffs_path = game_save_folder.joinpath("PLAYOFFS")
+
+    error_log = {}
+    for season, game_ids in game_ids_regular_season.items():
+        error_log["regular_season"] = {}
+
+        for game_id in track(
+            game_ids, description=f"Getting regular season data - {season}"
+        ):
+            if regular_season_path.joinpath(f"{game_id}").exists():
+                # if it folder exists, check if it has all expcted content
+                if len(list(regular_season_path.joinpath(f"{game_id}").iterdir())) > 1:
+                    logger.info(f"Game ID: {game_id} already exists --skipping")
+                    continue
+            logger.info(f"Game ID: {game_id}")
+            try:
+                game_ingest = GameIngest(
+                    game_id=game_id,  # Expects season year not season id
+                    save_folder=regular_season_path,
+                    verbose=True,
+                )
+            except Exception as e:
+                logger.error(f"Error for {game_id} - {e}")
+                error_log["regular_season"][game_id] = e
+                continue
+
+            game_ingest.save_all()
+            sleep(1)
+
+    for season, game_ids in game_ids_playoffs.items():
+        error_log["playoffs"] = {}
+
+        for game_id in track(game_ids, description=f"Getting playoffs data - {season}"):
+            if playoffs_path.joinpath(f"{game_id}").exists():
+                if len(list(playoffs_path.joinpath(f"{game_id}").iterdir())) > 1:
+                    logger.info(f"Game ID: {game_id} already exists --skipping")
+                    continue
+            logger.info(f"Game ID: {game_id}")
+            try:
+                game_ingest = GameIngest(
+                    game_id=game_id,  # Expects season year not season id
+                    save_folder=playoffs_path,
+                    verbose=True,
+                )
+            except Exception as e:
+                logger.error(f"Error for {game_id} - {e}")
+                error_log["playoffs"][game_id] = e
+                continue
+
+            game_ingest.save_all()
+            sleep(1)
+    logger.info("Saving error log")
+    with open(game_error_log_path.joinpath(f"{str(date.today())}.yaml"), "w") as file:
+        yaml.dump(error_log, file)
+
+
 # TODO:
 # -- Pull in data_to_pull yaml file
 # -- For each ID, use the data_ingest process from dataingest and check save_historical.py
