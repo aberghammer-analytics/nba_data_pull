@@ -168,5 +168,9 @@ cython_debug/
 #.idea/
 
 # PyPI configuration file
+.DS_Store
 .pypirc
 .scratch/
+data/nba/*
+data/logs/*
+data/meta/*
