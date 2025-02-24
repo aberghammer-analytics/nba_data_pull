@@ -1,13 +1,16 @@
 from datetime import date
 from pathlib import Path
 
+import boto3
 import typer
 import yaml
 from inventory_utils import (
+    InventoryMeta,
     SeasonYear,
-    build_directory_tree,
     get_season_list,
+    load_yaml_s3,
     process_seasons,
+    update_s3_inventory,
 )
 from loguru import logger
 from typing_extensions import Annotated
@@ -29,45 +32,75 @@ def copy_previous_meta(
             help="Output folder to save archive", file_okay=False, dir_okay=True
         ),
     ] = Path("data/logs/inventory_logs/"),
+    bucket_name: Annotated[
+        str, typer.Argument(help="S3 bucket name")
+    ] = "nba-data-storage-analyticsapp",
 ):
+    logger.info("Connecting to S3")
+    s3 = boto3.client("s3")
+
+    # Create output folder for today
+    out_folder = out_folder.joinpath(str(date.today()))
+
     logger.info("Reading data")
-    with open(root_folder.joinpath("inventory.yaml"), "r") as file:
-        inventory = yaml.safe_load(file)
+    inventory = load_yaml_s3(
+        root_folder.joinpath("inventory.yaml"), bucket_name=bucket_name, s3_client=s3
+    )
+    data_to_pull = load_yaml_s3(
+        root_folder.joinpath("data_to_pull.yaml"), bucket_name=bucket_name, s3_client=s3
+    )
 
-    with open(root_folder.joinpath("data_to_pull.yaml"), "r") as file:
-        data_to_pull = yaml.safe_load(file)
+    logger.info("Saving data to S3")
+    # Convert Python dictionary to YAML format
+    inventory_yaml_content = yaml.dump(inventory, default_flow_style=False)
+    data_to_pull_yaml_content = yaml.dump(data_to_pull, default_flow_style=False)
 
-    logger.info("Saving data to archive")
-    out_folder.joinpath(str(date.today())).mkdir(parents=True, exist_ok=True)
-    with open(
-        out_folder.joinpath(str(date.today())).joinpath("inventory.yaml"), "w"
-    ) as file:
-        yaml.safe_dump(inventory, file)
-
-    with open(
-        out_folder.joinpath(str(date.today())).joinpath("data_to_pull.yaml"), "w"
-    ) as file:
-        yaml.safe_dump(data_to_pull, file)
+    # Upload to S3
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=str(out_folder.joinpath("inventory.yaml")),
+        Body=inventory_yaml_content,
+    )
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=str(out_folder.joinpath("data_to_pull.yaml")),
+        Body=data_to_pull_yaml_content,
+    )
 
 
 @app.command()
 def create_inventory(
-    root_folder: Annotated[
-        Path,
-        typer.Argument(help="Root folder with data", file_okay=False, dir_okay=True),
-    ] = Path("data/nba/"),
     output_path: Annotated[
         Path,
         typer.Argument(
             help="Path to save data inventory", file_okay=True, dir_okay=False
         ),
     ] = Path("data/meta/inventory.yaml"),
+    bucket_name: Annotated[
+        str, typer.Argument(help="S3 bucket name")
+    ] = "nba-data-storage-analyticsapp",
 ):
-    directory_tree = build_directory_tree(root_folder)
+    inventory_meta = InventoryMeta().empty_inventory
 
-    logger.info("Saving file tree to output path")
-    with open(output_path, "w") as file:
-        yaml.safe_dump(directory_tree, file)
+    logger.info("Setting up Client")
+    s3 = boto3.client("s3")
+
+    logger.info("Getting inventory")
+    updated_inventory = update_s3_inventory(
+        inventory=inventory_meta,
+        bucket=bucket_name,
+        prefix="data/nba/",
+        s3_client=s3,
+    )
+
+    inventory_yaml_content = yaml.dump(updated_inventory, default_flow_style=False)
+
+    logger.info("Saving inventory to S3")
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=str(output_path),
+        Body=inventory_yaml_content,
+    )
 
 
 @app.command()
@@ -85,9 +118,15 @@ def get_data_to_pull(
     earliest_season_year: Annotated[
         int, typer.Argument(help="Earliest season year")
     ] = 1990,
+    bucket_name: Annotated[
+        str, typer.Argument(help="S3 bucket name")
+    ] = "nba-data-storage-analyticsapp",
 ):
-    with open(inventory_path, "r") as file:
-        inventory = yaml.safe_load(file)
+    logger.info("Connecting to S3")
+    s3 = boto3.client("s3")
+
+    logger.info("Reading data")
+    inventory = load_yaml_s3(str(inventory_path), bucket_name=bucket_name, s3_client=s3)
 
     expected_season_list = [
         f"{str(season)}{str(season + 1)[-2:]}"
@@ -168,8 +207,14 @@ def get_data_to_pull(
         ]
 
     logger.info("Saving Data")
-    with open(output_path, "w") as json_file:
-        yaml.safe_dump(data_to_pull, json_file, indent=4)
+    data_to_pull_yaml_content = yaml.dump(data_to_pull, default_flow_style=False)
+
+    logger.info("Saving inventory to S3")
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=str(output_path),
+        Body=data_to_pull_yaml_content,
+    )
 
 
 if __name__ == "__main__":
