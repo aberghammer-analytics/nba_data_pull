@@ -6,6 +6,8 @@ This repo has code to automatically pull nba data using `nbastatpy`. This will b
 
 To get started, you can run `uv sync` if you have uv installed to install the required dependencies and set up the virtual environment. If not, you can run `pip install .` to install dependincies from `pyproject.toml`.
 
+This automated repo uses AWS S3 to store the data. You will need to set a bucket along with the correct security requirements, you will then want to add your AWS credentials to the `sample.env` file to ensure everything loads properly and works consistently.
+
 This repo uses [typer](https://typer.tiangolo.com/) as the CLI tool to run each command manually, but airflow is used for automation and scheduling. Typer allows you to run commands using syntax such as `python src/get_data.py <command> <args>` to run the function. You can also use the `--help` flag to get more information on the function prior to running it.
 
 ## Workflow
