@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from time import sleep
 
@@ -53,39 +52,27 @@ class PlayerIngest(Player):
     def __init__(
         self,
         player: str,
-        save_folder: Path,
+        save_folder: str,
         season_year: str = None,
         playoffs: bool = False,
         permode: str = "PERGAME",
-        verbose: bool = False,
     ):
         super().__init__(
             player=player, season_year=season_year, playoffs=playoffs, permode=permode
         )
+        self.base_folder = str(save_folder)
 
-        self.save_folder = Path(save_folder).joinpath(
-            str(self.id).upper().replace(" ", "").replace("-", "")
-        )
-
-        if not Path(self.save_folder).exists():
-            if verbose:
-                logger.info(f"Creating folder: {str(self.save_folder)}")
-            Path(self.save_folder).mkdir(parents=True, exist_ok=True)
+        self.save_folder = f"{save_folder}/{self.id}"
 
     def save_combine_stats(self):
         df = self.get_combine_stats()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{str(self.id)}_combine_stats.csv"), index=False
-        )
+        df.to_csv(f"{self.save_folder}/{self.id}_combine_stats.csv", index=False)
 
     def save_common_info(self):
         df = pd.DataFrame(self.get_common_info(), index=[self.id])
-        df.to_csv(
-            self.save_folder.joinpath(f"{str(self.id)}_common_info.csv"), index=False
-        )
+        df.to_csv(f"{self.save_folder}/{self.id}_common_info.csv", index=False)
 
     def save_all(self, verbose: bool = False):
-        log_file = {}
         total_tasks = 2
         progress_bar = tqdm(total=total_tasks, desc="Progress", unit="task")
         try:
@@ -94,7 +81,6 @@ class PlayerIngest(Player):
             progress_bar.update(1)
             sleep(1)
         except Exception as e:
-            log_file["common_info"] = str(e)
             logger.error(f"common_info: {str(e)}")
 
         try:
@@ -102,13 +88,10 @@ class PlayerIngest(Player):
             self.save_combine_stats()
             progress_bar.update(1)
         except Exception as e:
-            log_file["combine"] = str(e)
             if verbose:
                 logger.error(f"combine: {str(e)}")
 
         progress_bar.close()
-        with open(self.save_folder.joinpath("log.json"), "w") as json_file:
-            json.dump(log_file, json_file, indent=4)
 
 
 class SeasonIngest(Season):
@@ -123,168 +106,122 @@ class SeasonIngest(Season):
         super().__init__(season_year=season_year, playoffs=playoffs, permode=permode)
 
         self.season_id = self.season.upper().replace(" ", "").replace("-", "")
-        self.save_folder = Path(save_folder).joinpath(str(self.season_id))
 
-        if not Path(self.save_folder).exists():
-            if verbose:
-                logger.info(f"Creating folder: {str(self.save_folder)}")
-            Path(self.save_folder).mkdir(parents=True, exist_ok=True)
+        self.base_folder = save_folder
+        self.save_folder = f"{save_folder}/{str(self.season_id)}"
 
     def save_defense_player(self):
         df = self.get_defense_player()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_defense.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_player_defense.csv", index=False
         )
 
     def save_defense_team(self):
         df = self.get_defense_team()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_defense.csv"), index=False
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_team_defense.csv", index=False)
 
     def save_lineup_details(self):
         df = self.get_lineup_details()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_lineup_details.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_lineup_details.csv", index=False
         )
 
     def save_lineups(self):
         df = self.get_lineups()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_lineups.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_lineups.csv", index=False)
 
     def save_opponent_shooting(self):
         df = self.get_opponent_shooting()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_opponent_shooting.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_opponent_shooting.csv", index=False
         )
 
     def save_player_clutch(self):
         df = self.get_player_clutch()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_clutch.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_player_clutch.csv", index=False)
 
     def save_player_games(self):
         df = self.get_player_games()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_games.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_player_games.csv", index=False)
 
     def save_player_hustle(self):
         df = self.get_player_hustle()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_hustle.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_player_hustle.csv", index=False)
 
     def save_player_matchups(self):
         df = self.get_player_matchups()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_matchups.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_player_matchups.csv", index=False
         )
 
     def save_player_shot_locations(self):
         df = self.get_player_shot_locations()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_shot_locations.csv"),
+            f"{self.save_folder}/{self.season_id}_player_shot_locations.csv",
             index=False,
         )
 
     def save_player_shots(self):
         df = self.get_player_shots()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_shots.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_player_shots.csv", index=False)
 
     def save_player_stats(self):
         df = self.get_player_stats()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_player_stats.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_player_stats.csv", index=False)
 
     def save_salaries(self):
         df = self.get_salaries()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_salaries.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_salaries.csv", index=False)
 
     def save_team_clutch(self):
         df = self.get_team_clutch()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_clutch.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_team_clutch.csv", index=False)
 
     def save_team_games(self):
         df = self.get_team_games()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_games.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_team_games.csv", index=False)
 
     def save_team_hustle(self):
         df = self.get_team_hustle()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_hustle.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_team_hustle.csv", index=False)
 
     def save_team_shot_locations(self):
         df = self.get_team_shot_locations()
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_shot_locations.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_team_shot_locations.csv", index=False
         )
 
     def save_team_stats(self):
         df = self.get_team_stats()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_team_stats.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.season_id}_team_stats.csv", index=False)
 
     def save_synergy_player(self, synergy_type: str):
         df = self.get_synergy_player(synergy_type)
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_{synergy_type}_player.csv"),
+            f"{self.save_folder}/{self.season_id}_{synergy_type}_player.csv",
             index=False,
         )
 
     def save_tracking_player(self, tracking_type: str):
         df = self.get_tracking_player(tracking_type)
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_{tracking_type}_player.csv"),
+            f"{self.save_folder}/{self.season_id}_{tracking_type}_player.csv",
             index=False,
         )
 
     def save_synergy_team(self, synergy_type: str):
         df = self.get_synergy_team(synergy_type)
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_{synergy_type}_team.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_{synergy_type}_team.csv", index=False
         )
 
     def save_tracking_team(self, tracking_type: str):
         df = self.get_tracking_team(tracking_type)
         df.to_csv(
-            self.save_folder.joinpath(f"{self.season_id}_{tracking_type}_team.csv"),
-            index=False,
+            f"{self.save_folder}/{self.season_id}_{tracking_type}_team.csv", index=False
         )
 
     def save_all_nonsynergy(self, verbose: bool = False):
-        log_file = {}
         total_tasks = 18
         progress_bar = tqdm(total=total_tasks, desc="Progress", unit="task")
 
@@ -318,15 +255,11 @@ class SeasonIngest(Season):
             except Exception as e:
                 if verbose:
                     logger.error(f"An error occurred in {desc}: {e}")
-                log_file[str(desc)] = str(e)
                 # Optionally, handle the error differently if needed
 
         progress_bar.close()
-        with open(self.save_folder.joinpath("log_nonsynergy.json"), "w") as json_file:
-            json.dump(log_file, json_file, indent=4)
 
     def save_all_synergy(self, verbose: bool = False):
-        log_file = {}
         tracking_types = set(NBADataMappings.TRACKING_TYPES.values())
         play_types = set(NBADataMappings.PLAY_TYPES.values())
 
@@ -339,7 +272,6 @@ class SeasonIngest(Season):
                 self.save_synergy_player(play_type)
                 sleep(1)
             except Exception as e:
-                log_file[str(play_type) + "_player"] = str(e)
                 if verbose:
                     logger.error(f"{play_type}_PLAYER: {str(e)}")
 
@@ -349,7 +281,6 @@ class SeasonIngest(Season):
                 progress_bar.update(1)
                 sleep(1)
             except Exception as e:
-                log_file[str(play_type) + "_team"] = str(e)
                 if verbose:
                     logger.error(f"{play_type}_TEAM: {str(e)}")
 
@@ -364,7 +295,6 @@ class SeasonIngest(Season):
                 self.save_tracking_player(tracking_type)
                 sleep(1)
             except Exception as e:
-                log_file[str(tracking_type) + "_player"] = str(e)
                 if verbose:
                     logger.error(f"{tracking_type}: {str(e)}")
 
@@ -374,13 +304,10 @@ class SeasonIngest(Season):
                 progress_bar.update(1)
                 sleep(1)
             except Exception as e:
-                log_file[str(tracking_type) + "_team"] = str(e)
                 if verbose:
                     logger.error(f"{tracking_type}: {str(e)}")
 
         progress_bar.close()
-        with open(self.save_folder.joinpath("log_synergy.json"), "w") as json_file:
-            json.dump(log_file, json_file, indent=4)
 
 
 class GameIngest(Game):
@@ -388,78 +315,46 @@ class GameIngest(Game):
         super().__init__(game_id=game_id)
         self.game_id = game_id
 
-        self.save_folder = Path(save_folder).joinpath(str(self.game_id))
-
-        if not Path(self.save_folder).exists():
-            if verbose:
-                logger.info(f"Creating folder: {str(self.save_folder)}")
-            Path(self.save_folder).mkdir(parents=True, exist_ok=True)
+        self.base_folder = save_folder
+        self.save_folder = f"{save_folder}/{str(self.game_id)}"
 
     def save_advanced(self):
         df = self.get_advanced()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_advanced.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_advanced.csv", index=False)
 
     def save_defense(self):
         df = self.get_defense()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_defense.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_defense.csv", index=False)
 
     def save_hustle(self):
         df = self.get_hustle()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_hustle.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_hustle.csv", index=False)
 
     def save_matchups(self):
         df = self.get_matchups()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_matchups.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_matchups.csv", index=False)
 
     def save_playbyplay(self):
         df = self.get_playbyplay()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_playbyplay.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_playbyplay.csv", index=False)
 
     def save_tracking(self):
         df = self.get_playertrack()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_tracking.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_tracking.csv", index=False)
 
     def save_rotations(self):
         df = self.get_rotations()
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_rotations.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_rotations.csv", index=False)
 
     def save_scoring(self):
         df = self.get_scoring()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_scoring.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_scoring.csv", index=False)
 
     def save_usage(self):
         df = self.get_usage()[0]
-        df.to_csv(
-            self.save_folder.joinpath(f"{self.game_id}_usage.csv"),
-            index=False,
-        )
+        df.to_csv(f"{self.save_folder}/{self.game_id}_usage.csv", index=False)
 
     def save_all(self, verbose: bool = False):
-        log_file = {}
         total_tasks = 9
         progress_bar = tqdm(total=total_tasks, desc="Progress", unit="task")
 
@@ -482,11 +377,10 @@ class GameIngest(Game):
                 progress_bar.update(1)
                 sleep(1)
             except Exception as e:
+                progress_bar.update(1)
                 if verbose:
                     logger.error(f"An error occurred in {desc}: {e}")
-                log_file[str(desc)] = str(e)
+
                 # Optionally, you can handle specific exceptions or log them differently
 
         progress_bar.close()
-        with open(self.save_folder.joinpath("log.json"), "w") as json_file:
-            json.dump(log_file, json_file, indent=4)
