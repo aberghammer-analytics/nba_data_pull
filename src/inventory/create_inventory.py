@@ -1,9 +1,11 @@
+import os
 from datetime import date
 from pathlib import Path
 
 import boto3
 import typer
 import yaml
+from dotenv import load_dotenv
 from inventory_utils import (
     InventoryMeta,
     SeasonYear,
@@ -14,6 +16,8 @@ from inventory_utils import (
 )
 from loguru import logger
 from typing_extensions import Annotated
+
+load_dotenv()
 
 app = typer.Typer()
 
@@ -32,10 +36,10 @@ def copy_previous_meta(
             help="Output folder to save archive", file_okay=False, dir_okay=True
         ),
     ] = Path("data/logs/inventory_logs/"),
-    bucket_name: Annotated[
-        str, typer.Argument(help="S3 bucket name")
-    ] = "nba-data-storage-analyticsapp",
 ):
+    bucket_name = os.getenv("BUCKET_NAME")
+    logger.info(f"Loaded bucket name: {bucket_name}")
+
     logger.info("Connecting to S3")
     s3 = boto3.client("s3")
 
@@ -76,10 +80,10 @@ def create_inventory(
             help="Path to save data inventory", file_okay=True, dir_okay=False
         ),
     ] = Path("data/meta/inventory.yaml"),
-    bucket_name: Annotated[
-        str, typer.Argument(help="S3 bucket name")
-    ] = "nba-data-storage-analyticsapp",
 ):
+    bucket_name = os.getenv("BUCKET_NAME")
+    logger.info(f"Loaded bucket name: {bucket_name}")
+
     inventory_meta = InventoryMeta().empty_inventory
 
     logger.info("Setting up Client")
@@ -118,10 +122,10 @@ def get_data_to_pull(
     earliest_season_year: Annotated[
         int, typer.Argument(help="Earliest season year")
     ] = 1990,
-    bucket_name: Annotated[
-        str, typer.Argument(help="S3 bucket name")
-    ] = "nba-data-storage-analyticsapp",
 ):
+    bucket_name = os.getenv("BUCKET_NAME")
+    logger.info(f"Loaded bucket name: {bucket_name}")
+
     logger.info("Connecting to S3")
     s3 = boto3.client("s3")
 
