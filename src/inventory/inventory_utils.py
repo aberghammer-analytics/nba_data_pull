@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from time import sleep
 
 import boto3
