@@ -19,5 +19,16 @@ dependencies = [
 [tool.uv]
 dev-dependencies = [
     "ipykernel>=6.29.5",
+    "pytest>=8.3.5",
     "ruff>=0.9.6",
 ]
+
+[project.scripts]
+example-pkg = "nba_data_pull:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nba_data_pull"]
