@@ -174,3 +174,7 @@ cython_debug/
 data/nba/*
 data/logs/*
 data/meta/*
+airflow/airflow.cfg
+airflow/*
+docker-entrypoint.sh
+logs/

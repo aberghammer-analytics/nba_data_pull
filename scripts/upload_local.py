@@ -1,10 +1,14 @@
+import os
 from pathlib import Path
 
 import boto3
+from dotenv import load_dotenv
 from tqdm import tqdm
 
+load_dotenv()
+
 # Configure S3 bucket
-BUCKET_NAME = "nba-data-storage-analyticsapp"  # Replace with your bucket name
+BUCKET_NAME = os.getenv("BUCKET_NAME")
 LOCAL_FOLDER = Path("data/")  # Path to the local folder
 S3_PREFIX = "data/"  # Path in S3 (acts like a root "folder")
 

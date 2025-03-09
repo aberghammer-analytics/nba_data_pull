@@ -1,0 +1,41 @@
+version: '3'
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+    - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+    - AIRFLOW__WEBSERVER__BASE_URL=http://localhost:8080
+    - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=False
+    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - BUCKET_NAME=${BUCKET_NAME}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./data:/opt/airflow/data
+    - ./logs:/opt/airflow/logs
+    - airflow_db:/opt/airflow  # Volume to persist the SQLite database
+  restart: always
+
+services:
+  webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  scheduler:
+    <<: *airflow-common
+    command: scheduler
+
+volumes:
+  airflow_db:  # This volume persists the SQLite database file

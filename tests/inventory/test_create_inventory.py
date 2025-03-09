@@ -54,8 +54,6 @@ def test_copy_previous_meta(sample_inventory, sample_data_to_pull):
         mock.patch(
             "nba_data_pull.inventory.create_inventory.load_yaml_s3"
         ) as mock_load,
-        mock.patch("pathlib.Path.open", mock.mock_open()) as mock_file,
-        mock.patch("yaml.dump") as mock_yaml_dump,
     ):
         # Set up the load_yaml_s3 mock to return our test data
         mock_load.side_effect = [sample_inventory, sample_data_to_pull]
@@ -80,7 +78,6 @@ def test_create_inventory():
             "nba_data_pull.inventory.create_inventory.update_s3_inventory"
         ) as mock_update,
         mock.patch("nba_data_pull.inventory.create_inventory.yaml.dump") as mock_dump,
-        mock.patch("pathlib.Path.open", mock.mock_open()) as mock_file,
     ):
         # Set up the return value for the directory scan
         mock_update.return_value = fake_inventory
@@ -97,11 +94,6 @@ def test_create_inventory():
 
 def test_get_data_to_pull(sample_inventory):
     """Test that get_data_to_pull correctly identifies data needs"""
-    expected_output = {
-        "game": {"regular_season": [], "playoffs": []},
-        "player": [],
-        "season": {"per_game": {"regular_season": [], "playoffs": []}},
-    }
 
     with (
         mock.patch(
@@ -114,7 +106,6 @@ def test_get_data_to_pull(sample_inventory):
             "nba_data_pull.inventory.create_inventory.process_seasons"
         ) as mock_process,
         mock.patch("nba_data_pull.inventory.create_inventory.yaml.dump") as mock_dump,
-        mock.patch("pathlib.Path.open", mock.mock_open()) as mock_file,
     ):
         # Set up the return values
         mock_load.return_value = sample_inventory

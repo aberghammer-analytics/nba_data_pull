@@ -6,11 +6,12 @@ from time import sleep
 import boto3
 import typer
 import yaml
-from dataingest import GameIngest, PlayerIngest, SeasonIngest
 from dotenv import load_dotenv
 from loguru import logger
 from rich.progress import track
 from typing_extensions import Annotated, Dict, Literal
+
+from nba_data_pull.data_pull.dataingest import GameIngest, PlayerIngest, SeasonIngest
 
 app = typer.Typer()
 
