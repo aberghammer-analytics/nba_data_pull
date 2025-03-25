@@ -1,6 +1,6 @@
 # NBA Data Pull
 
-This repo has code to automatically pull nba data using `nbastatpy`. This will be containerized and run daily on AWS to update a database.
+This repo has code to automatically pull nba data using `nbastatpy`. This will be containerized and run daily on a linux server (Debian) to update a database.
 
 ## Overview & Setup
 
@@ -9,6 +9,8 @@ To get started, you can run `uv sync` if you have uv installed to install the re
 This automated repo uses AWS S3 to store the data. You will need to set a bucket along with the correct security requirements, you will then want to add your AWS credentials to the `sample.env` file to ensure everything loads properly and works consistently.
 
 This repo uses [typer](https://typer.tiangolo.com/) as the CLI tool to run each command manually, but airflow is used for automation and scheduling. Typer allows you to run commands using syntax such as `python src/get_data.py <command> <args>` to run the function. You can also use the `--help` flag to get more information on the function prior to running it.
+
+This repo also uses [airflow](https://airflow.apache.org/) for orchestration to run daily at 3am. This process pulls data from the NBA API and saves it to an AWS S3 Bucket.
 
 ## Workflow
 

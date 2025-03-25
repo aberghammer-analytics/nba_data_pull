@@ -1,0 +1,130 @@
+version: '3'
+
+# Base configuration without build instructions
+x-airflow-common: &airflow-common
+  image: custom-airflow:latest
+  environment:
+    - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+    - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY:-temporary_key_for_testing_only_please_change}
+    - AIRFLOW__WEBSERVER__WEB_SERVER_TIMEOUT=180
+    - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=False
+    - AIRFLOW__WEBSERVER__WORKER_REFRESH_INTERVAL=600
+    - AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL=30
+    - AIRFLOW__CORE__DAG_FILE_PROCESSOR_TIMEOUT=300
+    - AIRFLOW__CORE__PARALLELISM=4
+    - AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG=2
+    - AIRFLOW__LOGGING__LOGGING_LEVEL=INFO
+    - AIRFLOW__CORE__LOAD_DEFAULT_CONNECTIONS=False
+    - AIRFLOW__CORE__STORE_SERIALIZED_DAGS=True
+    - AIRFLOW__CORE__LAZY_LOAD_PLUGINS=True
+    - AIRFLOW__SCHEDULER__USE_JOB_SCHEDULE=True
+    - AIRFLOW__CORE__MIN_SERIALIZED_DAG_UPDATE_INTERVAL=30
+    - AIRFLOW__CORE__MIN_SERIALIZED_DAG_FETCH_INTERVAL=10
+    - AIRFLOW_EMAIL=${AIRFLOW_EMAIL}
+    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY}
+    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+    - BUCKET_NAME=${BUCKET_NAME}
+    - POSTGRES_USER=airflow
+    - POSTGRES_PASSWORD=airflow
+    - POSTGRES_DB=airflow
+    - AIRFLOW_HOME=/opt/airflow
+    - TZ=UTC
+    - PATH=/app/.venv/bin:${PATH}
+    - PYTHONPATH=/app:/app/src:/opt/airflow
+    - VIRTUAL_ENV=/app/.venv
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./data:/opt/airflow/data
+    - ./src:/app/src
+    - airflow_temp:/tmp
+  networks:
+    - airflow-network
+  restart: always
+  stop_grace_period: 30s
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  # Builder service - only this service has the build instructions
+  airflow-builder:
+    image: custom-airflow:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - airflow-network
+    command: ["echo", "Image built successfully"]
+    profiles: ["airflow-builder"]
+
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - airflow-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  initdb:
+    <<: *airflow-common
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["db", "migrate"]
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  createuser:
+    <<: *airflow-common
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["users", "create", "--username", "${AIRFLOW_ADMIN_USERNAME}", "--firstname", "Admin", "--lastname", "User", "--role", "Admin", "--email", "${AIRFLOW_EMAIL}", "--password", "${AIRFLOW_ADMIN_PASSWORD}"]
+    restart: on-failure
+    depends_on:
+      - initdb
+    
+  webserver:
+    <<: *airflow-common
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["webserver"]
+    ports:
+      - "8080:8080"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - createuser
+    
+  scheduler:
+    <<: *airflow-common
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["scheduler"]
+    restart: always
+    depends_on:
+      - webserver
+
+networks:
+  airflow-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  airflow_temp:

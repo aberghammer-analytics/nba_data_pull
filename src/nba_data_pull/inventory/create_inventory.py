@@ -6,7 +6,10 @@ import boto3
 import typer
 import yaml
 from dotenv import load_dotenv
-from inventory_utils import (
+from loguru import logger
+from typing_extensions import Annotated
+
+from nba_data_pull.inventory.inventory_utils import (
     InventoryMeta,
     SeasonYear,
     get_season_list,
@@ -14,8 +17,6 @@ from inventory_utils import (
     process_seasons,
     update_s3_inventory,
 )
-from loguru import logger
-from typing_extensions import Annotated
 
 load_dotenv()
 
@@ -37,6 +38,11 @@ def copy_previous_meta(
         ),
     ] = Path("data/logs/inventory_logs/"),
 ):
+    if isinstance(root_folder, str):
+        root_folder = Path(root_folder)
+    if isinstance(out_folder, str):
+        out_folder = Path(out_folder)
+
     bucket_name = os.getenv("BUCKET_NAME")
     logger.info(f"Loaded bucket name: {bucket_name}")
 
