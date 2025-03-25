@@ -178,3 +178,4 @@ airflow/airflow.cfg
 airflow/*
 docker-entrypoint.sh
 logs/
+exclude.txt

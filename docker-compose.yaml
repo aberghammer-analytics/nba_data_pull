@@ -22,6 +22,11 @@ x-airflow-common: &airflow-common
     - AIRFLOW__SCHEDULER__USE_JOB_SCHEDULE=True
     - AIRFLOW__CORE__MIN_SERIALIZED_DAG_UPDATE_INTERVAL=30
     - AIRFLOW__CORE__MIN_SERIALIZED_DAG_FETCH_INTERVAL=10
+    - AIRFLOW_EMAIL=${AIRFLOW_EMAIL}
+    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY}
+    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+    - BUCKET_NAME=${BUCKET_NAME}
     - POSTGRES_USER=airflow
     - POSTGRES_PASSWORD=airflow
     - POSTGRES_DB=airflow
@@ -87,7 +92,7 @@ services:
   createuser:
     <<: *airflow-common
     entrypoint: ["/docker-entrypoint.sh"]
-    command: ["users", "create", "--username", "${AIRFLOW_ADMIN_USERNAME}", "--firstname", "Admin", "--lastname", "User", "--role", "Admin", "--email", "${ADMIN_EMAIL}", "--password", "${AIRFLOW_ADMIN_PASSWORD}"]
+    command: ["users", "create", "--username", "${AIRFLOW_ADMIN_USERNAME}", "--firstname", "Admin", "--lastname", "User", "--role", "Admin", "--email", "${AIRFLOW_EMAIL}", "--password", "${AIRFLOW_ADMIN_PASSWORD}"]
     restart: on-failure
     depends_on:
       - initdb

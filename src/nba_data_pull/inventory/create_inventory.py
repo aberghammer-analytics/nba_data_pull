@@ -38,6 +38,11 @@ def copy_previous_meta(
         ),
     ] = Path("data/logs/inventory_logs/"),
 ):
+    if isinstance(root_folder, str):
+        root_folder = Path(root_folder)
+    if isinstance(out_folder, str):
+        out_folder = Path(out_folder)
+
     bucket_name = os.getenv("BUCKET_NAME")
     logger.info(f"Loaded bucket name: {bucket_name}")
 
